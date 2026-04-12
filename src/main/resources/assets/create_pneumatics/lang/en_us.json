@@ -1,0 +1,13 @@
+{
+  "itemGroup.create_pneumatic": "Example Mod Tab",
+  "block.create_pneumatic.example_block": "Example Block",
+  "item.create_pneumatic.example_item": "Example Item",
+
+  "create_pneumatic.configuration.title": "Create: Pneumatics Configs",
+  "create_pneumatic.configuration.section.create_pneumatic.common.toml": "Create: Pneumatics Configs",
+  "create_pneumatic.configuration.section.create_pneumatic.common.toml.title": "Create: Pneumatics Configs",
+  "create_pneumatic.configuration.items": "Item List",
+  "create_pneumatic.configuration.logDirtBlock": "Log Dirt Block",
+  "create_pneumatic.configuration.magicNumberIntroduction": "Magic Number Text",
+  "create_pneumatic.configuration.magicNumber": "Magic Number"
+}

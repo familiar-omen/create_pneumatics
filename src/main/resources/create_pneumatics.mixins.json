@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.familiar_omen.create_pneumatics.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "create_pneumatics.refmap.json",
+  "mixins": [
+    "BacktankBlockMixin",
+    "BacktankBlockEntityMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
