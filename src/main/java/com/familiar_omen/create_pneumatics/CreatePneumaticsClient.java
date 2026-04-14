@@ -31,10 +31,6 @@ public class CreatePneumaticsClient {
 
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
-        // Some client setup code
-        CreatePneumatics.LOGGER.info("HELLO FROM CLIENT SETUP");
-        CreatePneumatics.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
-
         CuriosRendererRegistry.register(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("create", "copper_backtank")), () -> new BacktankCurioRenderer());
         CuriosRendererRegistry.register(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("create", "netherite_backtank")), () -> new BacktankCurioRenderer());
     }

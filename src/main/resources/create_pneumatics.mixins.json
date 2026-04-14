@@ -5,8 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "create_pneumatics.refmap.json",
   "mixins": [
-    "BacktankBlockMixin",
-    "BacktankBlockEntityMixin"
+    "backtank.BacktankBlockMixin",
+    "backtank.BacktankBlockEntityMixin"
   ],
   "client": [],
   "injectors": {

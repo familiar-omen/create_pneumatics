@@ -1,4 +1,4 @@
-package com.familiar_omen.create_pneumatics.mixin;
+package com.familiar_omen.create_pneumatics.mixin.backtank;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -6,18 +6,31 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.familiar_omen.create_pneumatics.BacktankBlockEntityInterface;
-import com.familiar_omen.create_pneumatics.BacktankMode;
 import com.familiar_omen.create_pneumatics.CreatePneumatics;
+import com.familiar_omen.create_pneumatics.backtank.BacktankValueBoxTransform;
+import com.familiar_omen.create_pneumatics.backtank.BacktankScrollValueBehaviour;
+
 import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.content.equipment.armor.BacktankBlockEntity;
 import com.simibubi.create.content.kinetics.KineticNetwork;
+import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.IRotate.SpeedLevel;
 import com.simibubi.create.content.kinetics.base.IRotate.StressImpact;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.motor.KineticScrollValueBehaviour;
+import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlock;
+import com.simibubi.create.foundation.advancement.AllAdvancements;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import com.simibubi.create.foundation.particle.AirParticleData;
 import com.simibubi.create.foundation.utility.CreateLang;
+import com.simibubi.create.infrastructure.config.AllConfigs;
+import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.createmod.catnip.math.VecHelper;
@@ -37,61 +50,18 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import java.util.List;
 
 @Mixin(BacktankBlockEntity.class)
-public abstract class BacktankBlockEntityMixin extends KineticBlockEntity implements BacktankBlockEntityInterface{
+public abstract class BacktankBlockEntityMixin extends KineticBlockEntity {
 
-    public BacktankMode mode = BacktankMode.Consume;
-
-    // @Shadow
-    // private Component defaultName;
-    
-    // @Shadow
-	// private DataComponentPatch componentPatch;
+    public int generatedSpeed = 0;
 
     public BacktankBlockEntityMixin(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
-	// 	defaultName = getDefaultName(state);
-	// 	componentPatch = DataComponentPatch.EMPTY;
-
-    //     CreatePneumatics.LOGGER.info("Backtank entity made");
-	// }
-
-    // @Shadow
-    // public abstract Component getDefaultName(BlockState state);
-
-    // @Inject(method = "getGeneratedSpeed", at = @At("HEAD"), cancellable = true, locals = LocalCapture.PRINT)
 
 
-    @Override
+    @Override //TODO:: injection
     public float getGeneratedSpeed() {
-		if (mode == BacktankMode.Clockwise) {
-            return 16f;
-        }
-		if (mode == BacktankMode.CounterClockwise) {
-            return -16f;
-        }
-        return 0f;
-    }
-
-
-	// public void addSpeedDependingOnMode(CallbackInfoReturnable<Float> cir) {
-	// 	if (should_output) {
-    //         cir.setReturnValue(16f);
-    //     }
-	// }
-    
-    @Override
-    public void flip() {
-		if (mode == BacktankMode.Consume) {
-            mode = BacktankMode.Clockwise;
-        }
-        else if (mode == BacktankMode.Clockwise) {
-            mode = BacktankMode.CounterClockwise;
-        }
-		else if (mode == BacktankMode.CounterClockwise) {
-            mode = BacktankMode.Consume;
-        }
-		reActivateSource = true;
+        return generatedSpeed;
     }
 
     public float TEMPcalculateStressApplied() {
@@ -106,17 +76,17 @@ public abstract class BacktankBlockEntityMixin extends KineticBlockEntity implem
 		return capacity;
 	}
 
-
     @Override
 	public float calculateStressApplied() {
-        if (mode != BacktankMode.Consume)
+        if (generatedSpeed != 0)
             return TEMPcalculateAddedStressCapacity();
         else
             return super.calculateStressApplied();
 	}
 
+	@Override
 	public float calculateAddedStressCapacity() {
-        if (mode != BacktankMode.Consume)
+        if (generatedSpeed != 0)
             return TEMPcalculateStressApplied();
         else
             return super.calculateAddedStressCapacity();
@@ -134,10 +104,13 @@ public abstract class BacktankBlockEntityMixin extends KineticBlockEntity implem
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     // @Override
     public void tick(CallbackInfo ci) {
-        if (mode != BacktankMode.Consume)
+        if (generatedSpeed != 0)
 			ci.cancel();
         
-		if (level.isClientSide) {
+		if (generatedSpeed == 0) {
+
+		}
+		else if (level.isClientSide) {
 			Vec3 centerOf = VecHelper.getCenterOf(worldPosition);
 			Vec3 v = VecHelper.offsetRandomly(centerOf, level.random, .65f);
 			Vec3 m = v.subtract(centerOf);
@@ -150,13 +123,13 @@ public abstract class BacktankBlockEntityMixin extends KineticBlockEntity implem
 		else 
 		{
             int prevComparatorLevel = getComparatorOutput();
-            float abs = Math.abs(getSpeed());
+            float abs = Math.abs(generatedSpeed);
             int increment = Mth.clamp(((int) abs - 100) / 20, 1, 5);
             airLevel = Math.max(0, airLevel - increment);
             if (getComparatorOutput() != prevComparatorLevel && !level.isClientSide)
                 level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
             if (airLevel == 0)
-                mode = BacktankMode.Consume;
+                generatedSpeed = 0;
                 reActivateSource = true;
                 sendData();
 				airLevelTimer = Mth.clamp((int) (128f - abs / 5f) - 108, 0, 20);
@@ -167,6 +140,41 @@ public abstract class BacktankBlockEntityMixin extends KineticBlockEntity implem
 			reActivateSource = false;
 		}
     }
+
+    // Speed Control
+	// private static final int MAX_SPEED = 256;
+
+	public ScrollValueBehaviour targetSpeed;
+
+    @Inject(method = "addBehaviours", at = @At("TAIL"))
+    public void AddSpeedControlBehavior(List<BlockEntityBehaviour> behaviours, CallbackInfo ci) {
+
+        Integer max = AllConfigs.server().kinetics.maxRotationSpeed.get();
+
+        targetSpeed = new BacktankScrollValueBehaviour(
+                CreateLang.translateDirect("kinetics.speed_controller.rotation_speed"),//TODO:: custom translate
+                this, new BacktankValueBoxTransform());
+        targetSpeed.between(-max, max);
+        targetSpeed.value = 0;
+        targetSpeed.withCallback(i -> this.updateTargetRotation(i));
+        behaviours.add(targetSpeed);
+    }
+
+	private void updateTargetRotation(int newSpeed) {
+		generatedSpeed = newSpeed;
+
+		reActivateSource = true;
+	}
+
+    @Inject(method = "write", at = @At("HEAD"))
+	protected void writeSpeed(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
+		compound.putInt("Speed", generatedSpeed);
+	}
+	
+    @Inject(method = "read", at = @At("HEAD"))
+	protected void readSpeed(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
+		generatedSpeed = compound.getInt("Speed");
+	}
 
     // Power Generation Code
     public boolean reActivateSource;
