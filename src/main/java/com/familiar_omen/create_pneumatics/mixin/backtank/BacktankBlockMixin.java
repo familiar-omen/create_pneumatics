@@ -39,7 +39,7 @@ import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 
 @Mixin(BacktankBlock.class)
-public abstract class BacktankBlockMixin implements IWrenchable {
+public abstract class BacktankBlockMixin {
 	@Shadow
 	public abstract ItemStack getCloneItemStack(LevelReader pLevel, BlockPos pos, BlockState state);
 
@@ -55,9 +55,8 @@ public abstract class BacktankBlockMixin implements IWrenchable {
 				stacks.setStackInSlot(i, getCloneItemStack(level, blockPos, state));
 				level.destroyBlock(blockPos, false);
 				cir.setReturnValue(ItemInteractionResult.SUCCESS);
+				break;
 			}
 		}
     }
-
-
 }
